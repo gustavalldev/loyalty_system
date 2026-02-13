@@ -1,0 +1,18 @@
+.DS_Store
+.idea/
+.vscode/
+
+# Secrets and local envs
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Dependencies
+**/node_modules/
+
+# Build artifacts
+**/dist/
+**/build/
+
+# Logs
+**/*.log
