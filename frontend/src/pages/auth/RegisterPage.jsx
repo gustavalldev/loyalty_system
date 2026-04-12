@@ -27,43 +27,18 @@ export default function RegisterPage() {
   const [target, setTarget] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [promoCode, setPromoCode] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
-  const [step, setStep] = useState(1);
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState({});
 
   async function handleSubmit(event) {
     event.preventDefault();
     setMessage("");
-    if (step === 1) {
-      const nextErrors = {};
-      if (!target) nextErrors.target = true;
-      if (!fullName) nextErrors.fullName = true;
-      if (!phone) nextErrors.phone = true;
-      if (!password) nextErrors.password = true;
-      setErrors(nextErrors);
-      if (Object.keys(nextErrors).length) {
-        setMessage("Заполните обязательные поля");
-        return;
-      }
-      try {
-        await apiPost("/auth/register", {
-          target,
-          channel: "email",
-          full_name: fullName,
-          phone
-        });
-      } catch (err) {
-        setMessage(err.message || "Ошибка");
-        return;
-      }
-      setStep(2);
-      return;
-    }
-
     const nextErrors = {};
-    if (!code) nextErrors.code = true;
+    if (!target) nextErrors.target = true;
+    if (!fullName) nextErrors.fullName = true;
+    if (!phone) nextErrors.phone = true;
     if (!password) nextErrors.password = true;
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
@@ -71,13 +46,12 @@ export default function RegisterPage() {
       return;
     }
     try {
-      const data = await apiPost("/auth/verify-otp", {
+      const data = await apiPost("/auth/register", {
         target,
-        code,
-        purpose: "register",
         full_name: fullName,
         password,
-        phone
+        phone,
+        promo_code: promoCode
       });
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
@@ -114,17 +88,13 @@ export default function RegisterPage() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-      {step === 2 && (
-        <input
-          className={`input${errors.code ? " invalid" : ""}`}
-          placeholder="Код из письма"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-      )}
-      <button className="button" type="submit">
-        {step === 1 ? "Регистрация" : "Подтвердить"}
-      </button>
+      <input
+        className="input"
+        placeholder="Промокод (если есть)"
+        value={promoCode}
+        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+      />
+      <button className="button" type="submit">Регистрация</button>
       {message && <div style={{ color: "#dc2626" }}>{message}</div>}
     </form>
   );

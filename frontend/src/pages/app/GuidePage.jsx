@@ -14,11 +14,11 @@ export default function GuidePage() {
       <div className="card">
         <h3>Поделитесь промокодом</h3>
         <div className="muted">
-          Дайте свой промокод друзьям или клиентам. Когда они оформят оплату, вы получите
+          Дайте свой промокод друзьям или клиентам. Когда они зарегистрируются с ним, вы получите
           <span className="accent-mint"> бонус</span>.
         </div>
         <div className="muted" style={{ marginTop: 6 }}>
-          Начисление происходит после подтверждения оплаты в CRM и может иметь период ожидания.
+          Начисление происходит автоматически при успешной регистрации нового пользователя по вашему коду.
         </div>
       </div>
 
@@ -41,7 +41,7 @@ export default function GuidePage() {
         <div className="card accent-card">
           <h3>3. Рефералы</h3>
           <div className="muted">
-            Список атрибуций и статусов. Следите за оплатами и <span className="accent-mint">вознаграждениями</span>.
+            Список регистраций по вашему коду и связанных <span className="accent-mint">вознаграждений</span>.
           </div>
         </div>
         <div className="card accent-card">

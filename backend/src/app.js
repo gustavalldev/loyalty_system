@@ -4,7 +4,6 @@ import healthRoutes from "./routes/health.js";
 import authRoutes from "./routes/auth.js";
 import meRoutes from "./routes/me.js";
 import loyaltyRoutes from "./routes/loyalty.js";
-import webhookRoutes from "./routes/webhook.js";
 import referralRoutes from "./routes/referrals.js";
 import adminRoutes from "./routes/admin.js";
 
@@ -39,7 +38,6 @@ app.use("/health", healthRoutes);
 app.use("/auth", authRoutes);
 app.use("/me", meRoutes);
 app.use("/loyalty", loyaltyRoutes);
-app.use("/webhooks", webhookRoutes);
 app.use("/referrals", referralRoutes);
 app.use("/admin", adminRoutes);
 

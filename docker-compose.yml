@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: loyalty_system
+      POSTGRES_USER: loyalty
+      POSTGRES_PASSWORD: loyalty
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_system"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgres://loyalty:loyalty@db:5432/loyalty_system
+      JWT_SECRET: change_me
+      OTP_SECRET: change_me
+      OTP_TTL_SECONDS: 300
+      OTP_ATTEMPTS: 3
+      OTP_COOLDOWN_SECONDS: 0
+      OTP_ECHO: "false"
+      OTP_LOG: "true"
+      UNISENDER_API_KEY: ${UNISENDER_API_KEY:-}
+      UNISENDER_SENDER_NAME: ${UNISENDER_SENDER_NAME:-}
+      UNISENDER_SENDER_EMAIL: ${UNISENDER_SENDER_EMAIL:-}
+      UNISENDER_LIST_ID: ${UNISENDER_LIST_ID:-}
+      OTP_EMAIL_SUBJECT: ${OTP_EMAIL_SUBJECT:-Код подтверждения}
+      CORS_ORIGINS: http://localhost:8080
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${FRONTEND_VITE_API_URL:-http://localhost:3000}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:

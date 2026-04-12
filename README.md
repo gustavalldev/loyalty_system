@@ -6,12 +6,12 @@
 - БД: PostgreSQL
 
 Функции текущей версии:
-- регистрация/вход по OTP + пароль;
+- регистрация и вход по email/телефону и паролю;
 - профиль пользователя;
 - бонусный счет и история операций;
-- реферальный код и атрибуции;
+- реферальный код и регистрации по промокоду;
 - админ-страница пользователей + ручные корректировки баланса;
-- webhook для событий CRM (`/webhooks/crm/deal-status`).
+- админ-управление промокодами.
 
 ## Структура репозитория
 
@@ -56,6 +56,10 @@ cp frontend/.env.example frontend/.env
   - `DATABASE_URL=postgres://<user>:<password>@localhost:5432/loyalty_system`
   - `JWT_SECRET=<secret>`
   - `OTP_SECRET=<secret>`
+  - `UNISENDER_API_KEY=<api_key>`
+  - `UNISENDER_SENDER_NAME=<sender_name>`
+  - `UNISENDER_SENDER_EMAIL=<confirmed_sender_email>`
+  - `UNISENDER_LIST_ID=<list_id>`
 - `frontend/.env`
   - `VITE_API_URL=http://localhost:3000`
 
@@ -104,19 +108,14 @@ npm run dev
   - `OTP_ECHO=true` (код вернется в ответе API)
   - `OTP_LOG=true` (код пишется в консоль backend)
 - После изменения `.env` перезапустите соответствующий процесс.
+- Для email-OTP используется UniSender. Нужны подтверждённый `sender_email` и `list_id` аккаунта.
 
-## 7) Webhook из CRM
+## 7) Промокоды и бонусы
 
-Локально удобно использовать `ngrok`:
-
-```bash
-ngrok http 3000
-```
-
-В CRM укажите:
-`https://<ngrok-domain>/webhooks/crm/deal-status`
-
-Примечание: в текущем коде endpoint принимает и логирует payload вебхука, а правила начислений работают для формата, описанного в `API.md`.
+- у каждого пользователя есть собственный промокод;
+- новый пользователь может ввести промокод при регистрации;
+- при успешной регистрации бонус начисляется и новому пользователю, и владельцу кода;
+- параметры промокода редактируются в админке.
 
 ## 8) Скрипты
 
@@ -130,3 +129,30 @@ Frontend:
 - `npm run build` — production build
 - `npm run preview` — предпросмотр сборки
 
+## Docker
+
+Проект можно поднять целиком через Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+Что поднимется:
+- `db` — PostgreSQL 16 на `localhost:5432`
+- `backend` — API на `http://localhost:3000`
+- `frontend` — SPA на `http://localhost:8080`
+
+Особенности:
+- backend на старте сам прогоняет SQL-миграции;
+- frontend собирается с `VITE_API_URL=http://localhost:3000` по умолчанию;
+- данные Postgres сохраняются в volume `postgres_data`.
+
+Если нужен UniSender в Docker, перед запуском можно экспортировать переменные:
+
+```bash
+export UNISENDER_API_KEY=...
+export UNISENDER_SENDER_NAME=...
+export UNISENDER_SENDER_EMAIL=...
+export UNISENDER_LIST_ID=...
+docker compose up --build
+```

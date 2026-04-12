@@ -12,7 +12,7 @@ CREATE TYPE auth_channel AS ENUM ('sms', 'email', 'telegram');
 CREATE TYPE account_status AS ENUM ('active', 'frozen');
 CREATE TYPE tx_type AS ENUM ('accrual', 'redemption', 'adjustment', 'hold', 'release');
 CREATE TYPE tx_status AS ENUM ('pending', 'confirmed', 'cancelled');
-CREATE TYPE referral_status AS ENUM ('lead_created', 'deal_created', 'paid', 'cancelled');
+CREATE TYPE referral_status AS ENUM ('lead_created', 'deal_created', 'paid', 'cancelled', 'registered');
 CREATE TYPE content_audience AS ENUM ('all', 'client', 'partner');
 CREATE TYPE content_status AS ENUM ('draft', 'published', 'archived');
 CREATE TYPE rule_status AS ENUM ('active', 'archived');
@@ -101,11 +101,15 @@ CREATE TABLE referral_codes (
     user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     code VARCHAR(64) NOT NULL UNIQUE,
     status VARCHAR(16) NOT NULL DEFAULT 'active',
+    bonus_new_user NUMERIC(14,2) NOT NULL DEFAULT 100,
+    bonus_referrer NUMERIC(14,2) NOT NULL DEFAULT 100,
+    max_uses INTEGER,
+    uses_count INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 -- =========================
--- SOURCES (SITES / CHANNELS)
+-- SOURCES (SITES / CHANNELS) [legacy CRM]
 -- =========================
 CREATE TABLE sources (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -116,6 +120,8 @@ CREATE TABLE sources (
 
 -- =========================
 -- REFERRAL ATTRIBUTIONS
+-- В активной логике используются для регистраций по промокоду.
+-- CRM-поля сохранены как legacy-совместимость для старых данных.
 -- =========================
 CREATE TABLE referral_attributions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -132,7 +138,7 @@ CREATE TABLE referral_attributions (
 );
 
 -- =========================
--- CRM EVENTS (WEBHOOK LOG)
+-- CRM EVENTS (WEBHOOK LOG) [legacy]
 -- =========================
 CREATE TABLE crm_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

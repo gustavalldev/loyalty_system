@@ -27,6 +27,109 @@ router.get("/users", requireAuth, requireRole(["admin"]), async (req, res) => {
   return res.json({ items: rows });
 });
 
+router.get("/referral-codes", requireAuth, requireRole(["admin"]), async (req, res) => {
+  const { q } = req.query || {};
+  const values = [];
+  let where = "";
+  if (q) {
+    values.push(`%${q}%`);
+    where = `WHERE rc.code ILIKE $1 OR u.email ILIKE $1 OR COALESCE(u.full_name, '') ILIKE $1`;
+  }
+
+  const { rows } = await pool.query(
+    `SELECT rc.id, rc.user_id, rc.code, rc.status, rc.created_at,
+            rc.bonus_new_user, rc.bonus_referrer, rc.max_uses, rc.uses_count,
+            u.full_name, u.email, u.phone
+     FROM referral_codes rc
+     JOIN users u ON u.id = rc.user_id
+     ${where}
+     ORDER BY rc.created_at DESC
+     LIMIT 200`,
+    values
+  );
+  return res.json({ items: rows });
+});
+
+router.patch("/referral-codes/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  const { id } = req.params;
+  const { code, status, bonus_new_user, bonus_referrer, max_uses } = req.body || {};
+  const nextCode = code == null ? undefined : String(code).trim().toUpperCase();
+  const nextStatus = status == null ? undefined : String(status).trim().toLowerCase();
+  const nextBonusNewUser = bonus_new_user == null ? undefined : Number(bonus_new_user);
+  const nextBonusReferrer = bonus_referrer == null ? undefined : Number(bonus_referrer);
+  const nextMaxUses = max_uses == null || max_uses === "" ? null : Number(max_uses);
+
+  if (nextCode !== undefined && !nextCode) {
+    return res.status(400).json({ error: "invalid_request" });
+  }
+  if (nextStatus !== undefined && !["active", "blocked", "archived"].includes(nextStatus)) {
+    return res.status(400).json({ error: "invalid_request" });
+  }
+  if (nextBonusNewUser !== undefined && (!Number.isFinite(nextBonusNewUser) || nextBonusNewUser < 0)) {
+    return res.status(400).json({ error: "invalid_request" });
+  }
+  if (nextBonusReferrer !== undefined && (!Number.isFinite(nextBonusReferrer) || nextBonusReferrer < 0)) {
+    return res.status(400).json({ error: "invalid_request" });
+  }
+  if (nextMaxUses !== null && nextMaxUses !== undefined && (!Number.isInteger(nextMaxUses) || nextMaxUses < 1)) {
+    return res.status(400).json({ error: "invalid_request" });
+  }
+  if (
+    nextCode === undefined &&
+    nextStatus === undefined &&
+    nextBonusNewUser === undefined &&
+    nextBonusReferrer === undefined &&
+    nextMaxUses === undefined
+  ) {
+    return res.status(400).json({ error: "invalid_request" });
+  }
+
+  const fields = [];
+  const values = [];
+  let idx = 1;
+
+  if (nextCode !== undefined) {
+    fields.push(`code = $${idx++}`);
+    values.push(nextCode);
+  }
+  if (nextStatus !== undefined) {
+    fields.push(`status = $${idx++}`);
+    values.push(nextStatus);
+  }
+  if (nextBonusNewUser !== undefined) {
+    fields.push(`bonus_new_user = $${idx++}`);
+    values.push(nextBonusNewUser);
+  }
+  if (nextBonusReferrer !== undefined) {
+    fields.push(`bonus_referrer = $${idx++}`);
+    values.push(nextBonusReferrer);
+  }
+  if (nextMaxUses !== undefined) {
+    fields.push(`max_uses = $${idx++}`);
+    values.push(nextMaxUses);
+  }
+  values.push(id);
+
+  try {
+    const { rows } = await pool.query(
+      `UPDATE referral_codes
+       SET ${fields.join(", ")}
+       WHERE id = $${idx}
+       RETURNING id, user_id, code, status, bonus_new_user, bonus_referrer, max_uses, uses_count, created_at`,
+      values
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: "not_found" });
+    }
+    return res.json(rows[0]);
+  } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "code_exists" });
+    }
+    throw err;
+  }
+});
+
 router.post("/loyalty/adjustments", requireAuth, requireRole(["admin"]), async (req, res) => {
   const { user_id, amount, reason } = req.body || {};
   const adjAmount = Number(amount);

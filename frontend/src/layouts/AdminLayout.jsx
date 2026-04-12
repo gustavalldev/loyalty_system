@@ -15,6 +15,7 @@ export default function AdminLayout() {
           <Logo height={72} />
           <div className="nav-links">
             <NavLink to="/admin">Пользователи</NavLink>
+            <NavLink to="/admin/promo-codes">Промокоды</NavLink>
           </div>
           <div className="nav-right">
             <div className="profile-menu">

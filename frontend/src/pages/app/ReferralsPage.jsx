@@ -28,19 +28,19 @@ export default function ReferralsPage() {
         </button>
       </div>
       <div className="card">
-        <h3>Атрибуции</h3>
+        <h3>Регистрации по коду</h3>
         <table className="table">
           <thead>
             <tr>
-              <th>Сделка</th>
+              <th>Контакт</th>
               <th>Статус</th>
-              <th>Сумма</th>
+              <th>Бонус</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={`${item.crm_deal_id}-${item.created_at}`}>
-                <td>{item.crm_deal_id}</td>
+              <tr key={`${item.crm_deal_id || item.client_contact}-${item.created_at}`}>
+                <td>{item.client_contact || item.crm_deal_id || "—"}</td>
                 <td>{item.status}</td>
                 <td>{item.amount_paid || 0}</td>
               </tr>

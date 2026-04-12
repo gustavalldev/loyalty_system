@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="64" height="64" rx="18" fill="#0F172A" />
+  <g fill="#2ED6B8" filter="url(#softGlow)">
+    <rect x="27" y="16" width="10" height="32" rx="4" />
+    <rect x="16" y="27" width="32" height="10" rx="4" />
+  </g>
+</svg>
