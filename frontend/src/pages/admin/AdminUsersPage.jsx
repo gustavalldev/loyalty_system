@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../api.js";
 
+const ROLE_LABELS = {
+  admin: "Администратор",
+  manager: "Менеджер",
+  partner: "Партнер",
+  client: "Клиент"
+};
+
 export default function AdminUsersPage() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
@@ -89,7 +96,7 @@ export default function AdminUsersPage() {
                 <td>{u.full_name || "—"}</td>
                 <td>{u.email || "—"}</td>
                 <td>{u.phone || "—"}</td>
-                <td>{u.role}</td>
+                <td>{ROLE_LABELS[u.role] || u.role || "—"}</td>
                 <td>{u.balance ?? "0.00"} {u.currency || "BONUS"}</td>
               </tr>
             ))}

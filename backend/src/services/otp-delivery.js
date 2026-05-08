@@ -1,4 +1,4 @@
-const UNISENDER_ENDPOINT = "https://api.unisender.com/ru/api/sendEmail?format=json";
+import nodemailer from "nodemailer";
 
 function escapeHtml(value) {
   return String(value || "")
@@ -9,25 +9,55 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function getUniSenderConfig() {
-  const apiKey = process.env.UNISENDER_API_KEY || "";
-  const senderName = process.env.UNISENDER_SENDER_NAME || "";
-  const senderEmail = process.env.UNISENDER_SENDER_EMAIL || "";
-  const listId = process.env.UNISENDER_LIST_ID || "";
+const PURPOSE_LABELS = {
+  registration: {
+    subject: "Код регистрации",
+    intro: "Ваш код для завершения регистрации:"
+  },
+  password_reset: {
+    subject: "Код восстановления пароля",
+    intro: "Ваш код для восстановления пароля:"
+  },
+  password_change: {
+    subject: "Код подтверждения смены пароля",
+    intro: "Ваш код для подтверждения смены пароля:"
+  },
+  login: {
+    subject: "Код подтверждения",
+    intro: "Ваш код подтверждения:"
+  }
+};
 
-  if (!apiKey || !senderName || !senderEmail || !listId) {
+function getSmtpConfig() {
+  const host = process.env.SMTP_HOST || "";
+  const port = Number(process.env.SMTP_PORT || 25);
+  const secure = process.env.SMTP_SECURE === "true";
+  const ignoreTLS = process.env.SMTP_IGNORE_TLS === "true";
+  const user = process.env.SMTP_USER || "";
+  const pass = process.env.SMTP_PASS || "";
+  const from = process.env.MAIL_FROM || "Avantaje Bonus <info@bonus-avantaje.ru>";
+
+  if (!host || !from) {
     return null;
   }
 
-  return { apiKey, senderName, senderEmail, listId };
+  return {
+    host,
+    port,
+    secure,
+    ignoreTLS,
+    auth: user && pass ? { user, pass } : undefined,
+    from
+  };
 }
 
-function buildOtpEmail({ code, ttlSeconds }) {
+function buildOtpEmail({ code, ttlSeconds, purpose }) {
   const minutes = Math.max(1, Math.ceil(Number(ttlSeconds || 0) / 60));
-  const subject = process.env.OTP_EMAIL_SUBJECT || "Код подтверждения";
+  const labels = PURPOSE_LABELS[purpose] || PURPOSE_LABELS.login;
+  const subject = process.env.OTP_EMAIL_SUBJECT || labels.subject;
   const body = process.env.OTP_EMAIL_BODY_HTML || `
     <div style="font-family:Arial,sans-serif;font-size:16px;line-height:1.5;color:#111827">
-      <p>Ваш код подтверждения:</p>
+      <p>${escapeHtml(labels.intro)}</p>
       <p style="font-size:32px;font-weight:700;letter-spacing:6px;margin:16px 0">${escapeHtml(code)}</p>
       <p>Код действует ${minutes} мин.</p>
       <p>Если вы не запрашивали этот код, просто проигнорируйте письмо.</p>
@@ -37,46 +67,39 @@ function buildOtpEmail({ code, ttlSeconds }) {
   return { subject, body };
 }
 
-async function sendViaUniSender({ to, code, ttlSeconds }) {
-  const config = getUniSenderConfig();
+async function sendViaSmtp({ to, code, ttlSeconds, purpose }) {
+  const config = getSmtpConfig();
   if (!config) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("unisender_not_configured");
+      throw new Error("smtp_not_configured");
     }
-    console.warn("[OTP][email] UniSender is not configured, skipping external email send");
+    console.warn("[OTP][email] SMTP is not configured, skipping external email send");
     return { skipped: true };
   }
 
-  const { subject, body } = buildOtpEmail({ code, ttlSeconds });
-  const payload = new URLSearchParams({
-    api_key: config.apiKey,
-    email: to,
-    sender_name: config.senderName,
-    sender_email: config.senderEmail,
+  const { subject, body } = buildOtpEmail({ code, ttlSeconds, purpose });
+  const transporter = nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    ignoreTLS: config.ignoreTLS,
+    auth: config.auth
+  });
+
+  const info = await transporter.sendMail({
+    from: config.from,
+    to,
     subject,
-    body,
-    list_id: String(config.listId)
+    html: body,
+    text: `${subject}\n\nКод: ${code}\nКод действует ${Math.max(1, Math.ceil(Number(ttlSeconds || 0) / 60))} мин.`
   });
 
-  const response = await fetch(UNISENDER_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: payload.toString()
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.error) {
-    throw new Error(data.code || data.error || "unisender_request_failed");
-  }
-
-  return { ok: true, provider: "unisender", response: data };
+  return { ok: true, provider: "smtp", messageId: info.messageId };
 }
 
-export async function sendOtpMessage({ target, channel, code, ttlSeconds }) {
+export async function sendOtpMessage({ target, channel, code, ttlSeconds, purpose }) {
   if (channel === "email") {
-    return sendViaUniSender({ to: target, code, ttlSeconds });
+    return sendViaSmtp({ to: target, code, ttlSeconds, purpose });
   }
 
   if (process.env.NODE_ENV !== "production") {

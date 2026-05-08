@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: loyalty_system
-      POSTGRES_USER: loyalty
-      POSTGRES_PASSWORD: loyalty
+      POSTGRES_DB: ${POSTGRES_DB:-loyalty_system}
+      POSTGRES_USER: ${POSTGRES_USER:-loyalty}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-loyalty}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U loyalty -d loyalty_system"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-loyalty} -d ${POSTGRES_DB:-loyalty_system}"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -26,22 +26,27 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-      DATABASE_URL: postgres://loyalty:loyalty@db:5432/loyalty_system
-      JWT_SECRET: change_me
-      OTP_SECRET: change_me
+      DATABASE_URL: postgres://${POSTGRES_USER:-loyalty}:${POSTGRES_PASSWORD:-loyalty}@db:5432/${POSTGRES_DB:-loyalty_system}
+      JWT_SECRET: ${JWT_SECRET:-change_me}
+      OTP_SECRET: ${OTP_SECRET:-change_me}
       OTP_TTL_SECONDS: 300
       OTP_ATTEMPTS: 3
       OTP_COOLDOWN_SECONDS: 0
       OTP_ECHO: "false"
-      OTP_LOG: "true"
-      UNISENDER_API_KEY: ${UNISENDER_API_KEY:-}
-      UNISENDER_SENDER_NAME: ${UNISENDER_SENDER_NAME:-}
-      UNISENDER_SENDER_EMAIL: ${UNISENDER_SENDER_EMAIL:-}
-      UNISENDER_LIST_ID: ${UNISENDER_LIST_ID:-}
-      OTP_EMAIL_SUBJECT: ${OTP_EMAIL_SUBJECT:-Код подтверждения}
-      CORS_ORIGINS: http://localhost:8080
+      OTP_LOG: ${OTP_LOG:-false}
+      SMTP_HOST: ${SMTP_HOST:-host.docker.internal}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_IGNORE_TLS: ${SMTP_IGNORE_TLS:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-Avantaje Bonus <info@bonus-avantaje.ru>}
+      OTP_EMAIL_SUBJECT: ${OTP_EMAIL_SUBJECT:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
 
   frontend:
     build:
@@ -52,7 +57,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8080}:80"
 
 volumes:
   postgres_data:

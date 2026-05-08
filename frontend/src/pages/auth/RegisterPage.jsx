@@ -2,26 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiPost } from "../../api.js";
 
-function formatPhone(value) {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (!digits.length) return "";
-  const normalized = digits.startsWith("7") ? digits : `7${digits}`;
-  const parts = [
-    normalized.slice(0, 1),
-    normalized.slice(1, 4),
-    normalized.slice(4, 7),
-    normalized.slice(7, 9),
-    normalized.slice(9, 11)
-  ];
-  let result = `+${parts[0]}`;
-  if (parts[1]) result += ` (${parts[1]}`;
-  if (parts[1] && parts[1].length === 3) result += ")";
-  if (parts[2]) result += ` ${parts[2]}`;
-  if (parts[3]) result += `-${parts[3]}`;
-  if (parts[4]) result += `-${parts[4]}`;
-  return result;
-}
-
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [target, setTarget] = useState("");
@@ -29,12 +9,12 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [step, setStep] = useState(1);
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState({});
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setMessage("");
+  function validateBaseFields() {
     const nextErrors = {};
     if (!target) nextErrors.target = true;
     if (!fullName) nextErrors.fullName = true;
@@ -43,15 +23,43 @@ export default function RegisterPage() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setMessage("Заполните обязательные поля");
+      return false;
+    }
+    return true;
+  }
+
+  async function handleRequestCode() {
+    setMessage("");
+    if (!validateBaseFields()) return;
+    try {
+      await apiPost("/auth/register/request-code", {
+        target,
+        phone
+      });
+      setStep(2);
+      setMessage("Код отправлен на email");
+    } catch (err) {
+      setMessage(err.message || "Ошибка");
+    }
+  }
+
+  async function handleRegister() {
+    setMessage("");
+    if (!validateBaseFields()) return;
+    if (!code) {
+      setErrors((current) => ({ ...current, code: true }));
+      setMessage("Введите код из письма");
       return;
     }
+    setErrors({});
     try {
       const data = await apiPost("/auth/register", {
         target,
         full_name: fullName,
         password,
         phone,
-        promo_code: promoCode
+        promo_code: promoCode,
+        code
       });
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
@@ -59,6 +67,15 @@ export default function RegisterPage() {
     } catch (err) {
       setMessage(err.message || "Ошибка");
     }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (step === 1) {
+      await handleRequestCode();
+      return;
+    }
+    await handleRegister();
   }
 
   return (
@@ -77,9 +94,12 @@ export default function RegisterPage() {
       />
       <input
         className={`input${errors.phone ? " invalid" : ""}`}
-        placeholder="Телефон"
+        placeholder="Телефон: +7 или 8..."
+        type="tel"
+        inputMode="tel"
+        autoComplete="tel"
         value={phone}
-        onChange={(e) => setPhone(formatPhone(e.target.value))}
+        onChange={(e) => setPhone(e.target.value)}
       />
       <input
         className={`input${errors.password ? " invalid" : ""}`}
@@ -94,7 +114,33 @@ export default function RegisterPage() {
         value={promoCode}
         onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
       />
-      <button className="button" type="submit">Регистрация</button>
+      {step === 2 && (
+        <input
+          className={`input${errors.code ? " invalid" : ""}`}
+          placeholder="Код из письма"
+          value={code}
+          onChange={(e) => {
+            setCode(e.target.value);
+            setErrors((current) => ({ ...current, code: false }));
+          }}
+        />
+      )}
+      <button className="button" type="submit">
+        {step === 1 ? "Отправить код" : "Завершить регистрацию"}
+      </button>
+      {step === 2 && (
+        <button
+          className="button secondary"
+          type="button"
+          onClick={() => {
+            setStep(1);
+            setCode("");
+            setMessage("");
+          }}
+        >
+          Изменить данные
+        </button>
+      )}
       {message && <div style={{ color: "#dc2626" }}>{message}</div>}
     </form>
   );

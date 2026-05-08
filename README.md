@@ -56,10 +56,9 @@ cp frontend/.env.example frontend/.env
   - `DATABASE_URL=postgres://<user>:<password>@localhost:5432/loyalty_system`
   - `JWT_SECRET=<secret>`
   - `OTP_SECRET=<secret>`
-  - `UNISENDER_API_KEY=<api_key>`
-  - `UNISENDER_SENDER_NAME=<sender_name>`
-  - `UNISENDER_SENDER_EMAIL=<confirmed_sender_email>`
-  - `UNISENDER_LIST_ID=<list_id>`
+  - `SMTP_HOST=localhost`
+  - `SMTP_PORT=25`
+  - `MAIL_FROM=Avantaje Bonus <info@bonus-avantaje.ru>`
 - `frontend/.env`
   - `VITE_API_URL=http://localhost:3000`
 
@@ -108,7 +107,7 @@ npm run dev
   - `OTP_ECHO=true` (код вернется в ответе API)
   - `OTP_LOG=true` (код пишется в консоль backend)
 - После изменения `.env` перезапустите соответствующий процесс.
-- Для email-OTP используется UniSender. Нужны подтверждённый `sender_email` и `list_id` аккаунта.
+- Для email-OTP используется SMTP. В локальной разработке без SMTP можно включить `OTP_ECHO=true`.
 
 ## 7) Промокоды и бонусы
 
@@ -147,12 +146,46 @@ docker compose up --build
 - frontend собирается с `VITE_API_URL=http://localhost:3000` по умолчанию;
 - данные Postgres сохраняются в volume `postgres_data`.
 
-Если нужен UniSender в Docker, перед запуском можно экспортировать переменные:
+Для сервера лучше создать корневой `.env` рядом с `docker-compose.yml`, например:
 
 ```bash
-export UNISENDER_API_KEY=...
-export UNISENDER_SENDER_NAME=...
-export UNISENDER_SENDER_EMAIL=...
-export UNISENDER_LIST_ID=...
-docker compose up --build
+POSTGRES_DB=loyalty_system
+POSTGRES_USER=loyalty
+POSTGRES_PASSWORD=change_me_db
+DB_PORT=5432
+BACKEND_PORT=3000
+FRONTEND_PORT=80
+JWT_SECRET=change_me_jwt
+OTP_SECRET=change_me_otp
+OTP_LOG=false
+SMTP_HOST=host.docker.internal
+SMTP_PORT=25
+SMTP_SECURE=false
+SMTP_IGNORE_TLS=true
+MAIL_FROM=Avantaje Bonus <info@bonus-avantaje.ru>
+CORS_ORIGINS=http://bonus-avantaje.ru
+FRONTEND_VITE_API_URL=http://bonus-avantaje.ru:3000
+```
+
+После этого:
+
+```bash
+docker compose up --build -d
+```
+
+Email-коды отправляются через SMTP. На сервере `bonyssrv` ожидается локальный SMTP/Postfix,
+доступный backend-контейнеру как `host.docker.internal:25`.
+
+Для production-доставки писем нужны DNS-записи для `bonus-avantaje.ru`:
+
+- `A mail.bonus-avantaje.ru -> 45.87.247.204`
+- `MX bonus-avantaje.ru -> mail.bonus-avantaje.ru`
+- `SPF`, `DKIM`, `DMARC`
+- reverse DNS/PTR на `mail.bonus-avantaje.ru`
+
+Тест запуска:
+
+```bash
+docker compose up --build -d
+docker compose logs -f backend
 ```

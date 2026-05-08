@@ -10,19 +10,23 @@ Health
   - Response: `{ ok: true }`
 
 Auth
+- `POST /auth/register/request-code`
+  - Назначение: отправка email-кода для регистрации
+  - Body: `{ target, phone }`
+  - Response: `{ ok, cooldown_seconds }`
 - `POST /auth/register`
-  - Назначение: прямая регистрация без OTP
-  - Body: `{ target, full_name, phone, password, promo_code? }`
+  - Назначение: регистрация после подтверждения email-кода
+  - Body: `{ target, full_name, phone, password, code, promo_code? }`
   - Response: `{ access_token, refresh_token, is_new_user }`
 - `POST /auth/login`
   - Назначение: прямой вход по email/телефону и паролю
   - Body: `{ target, password }`
   - Response: `{ access_token, refresh_token, is_new_user }`
 - `POST /auth/request-password-reset`
-  - Назначение: отправка OTP для восстановления пароля
-  - Body: `{ target, channel }`
+  - Назначение: отправка email-кода для восстановления пароля
+  - Body: `{ target }`
   - Response: `{ ok, cooldown_seconds }`
-  - Для `channel=email` OTP отправляется через UniSender
+  - OTP отправляется через SMTP
 - `POST /auth/reset-password`
   - Назначение: сброс пароля по OTP
   - Body: `{ target, code, new_password }`

@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPatch } from "../../api.js";
 
+const STATUS_LABELS = {
+  active: "Активен",
+  blocked: "Заблокирован",
+  archived: "В архиве"
+};
+
 export default function AdminPromoCodesPage() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
@@ -85,9 +91,9 @@ export default function AdminPromoCodesPage() {
             disabled={!editingId}
           />
           <select className="input" value={draftStatus} onChange={(e) => setDraftStatus(e.target.value)} disabled={!editingId}>
-            <option value="active">active</option>
-            <option value="blocked">blocked</option>
-            <option value="archived">archived</option>
+            <option value="active">Активен</option>
+            <option value="blocked">Заблокирован</option>
+            <option value="archived">В архиве</option>
           </select>
           <input
             className="input"
@@ -133,7 +139,7 @@ export default function AdminPromoCodesPage() {
             {items.map((item) => (
               <tr key={item.id}>
                 <td>{item.code}</td>
-                <td>{item.status}</td>
+                <td>{STATUS_LABELS[item.status] || item.status || "—"}</td>
                 <td>{item.bonus_new_user} / {item.bonus_referrer}</td>
                 <td>{item.max_uses == null ? `∞ (${item.uses_count || 0})` : `${item.uses_count || 0}/${item.max_uses}`}</td>
                 <td>{item.full_name || "—"}</td>

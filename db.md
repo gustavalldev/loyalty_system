@@ -43,6 +43,7 @@ CREATE TABLE auth_codes (
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     target VARCHAR(255) NOT NULL,
     channel auth_channel NOT NULL,
+    purpose VARCHAR(32) NOT NULL DEFAULT 'login',
     code_hash VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     attempts_left INTEGER NOT NULL DEFAULT 3,

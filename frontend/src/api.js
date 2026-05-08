@@ -1,6 +1,18 @@
 const baseUrl = import.meta.env.VITE_API_URL || "";
 let refreshing = null;
 
+const ERROR_MESSAGES = {
+  invalid_code: "Неверный код подтверждения",
+  expired_code: "Код истёк",
+  attempts_exceeded: "Слишком много неверных попыток",
+  invalid_credentials: "Неверный логин или пароль",
+  invalid_email: "Введите корректный email",
+  user_exists: "Пользователь уже существует",
+  phone_in_use: "Телефон уже используется",
+  delivery_failed: "Не удалось отправить письмо",
+  cooldown: "Слишком много запросов"
+};
+
 async function refreshToken() {
   const refresh = localStorage.getItem("refresh_token");
   if (!refresh) return null;
@@ -61,13 +73,11 @@ export async function apiRequest(path, options = {}) {
     }
   }
   if (!res.ok) {
-    let message = data.error || "request_failed";
+    let message = ERROR_MESSAGES[data.error] || data.error || "request_failed";
     if (res.status === 429 && data.retry_after) {
       message = `Слишком много запросов. Подождите ${data.retry_after} сек.`;
     } else if (res.status === 400) {
-      message = "Проверьте введённые данные";
-    } else if (res.status === 401) {
-      message = "Неверный логин или пароль";
+      message = ERROR_MESSAGES[data.error] || "Проверьте введённые данные";
     }
     const error = new Error(message);
     error.status = res.status;

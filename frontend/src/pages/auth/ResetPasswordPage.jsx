@@ -22,7 +22,7 @@ export default function ResetPasswordPage() {
       return;
     }
     try {
-      await apiPost("/auth/request-password-reset", { target, channel: "email" });
+      await apiPost("/auth/request-password-reset", { target });
     } catch (err) {
       setMessage(err.message || "Ошибка");
       return;
