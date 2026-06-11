@@ -16,11 +16,13 @@ export default function AdminLayout() {
           <div className="nav-links">
             <NavLink to="/admin">Пользователи</NavLink>
             <NavLink to="/admin/promo-codes">Промокоды</NavLink>
+            <NavLink to="/">Кабинет</NavLink>
           </div>
           <div className="nav-right">
             <div className="profile-menu">
               <button className="profile-icon" type="button" aria-label="Профиль" />
               <div className="profile-dropdown">
+                <NavLink to="/">Кабинет</NavLink>
                 <NavLink to="/profile">Профиль</NavLink>
                 <NavLink to="/security">Безопасность</NavLink>
                 <button type="button" onClick={logout}>Выйти</button>
