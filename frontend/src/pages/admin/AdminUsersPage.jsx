@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../api.js";
-
-const ROLE_LABELS = {
-  admin: "Администратор",
-  manager: "Менеджер",
-  partner: "Партнер",
-  client: "Клиент"
-};
+import { getRoleLabel } from "../../loyaltyLabels.js";
 
 export default function AdminUsersPage() {
   const [items, setItems] = useState([]);
@@ -47,7 +41,19 @@ export default function AdminUsersPage() {
   }
 
   useEffect(() => {
-    load();
+    let active = true;
+    apiGet("/admin/users")
+      .then((data) => {
+        if (!active) return;
+        setItems(data.items || []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setMessage(err.message || "Ошибка");
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -96,7 +102,7 @@ export default function AdminUsersPage() {
                 <td>{u.full_name || "—"}</td>
                 <td>{u.email || "—"}</td>
                 <td>{u.phone || "—"}</td>
-                <td>{ROLE_LABELS[u.role] || u.role || "—"}</td>
+                <td>{getRoleLabel(u.role)}</td>
                 <td>{u.balance ?? "0.00"} {u.currency || "BONUS"}</td>
               </tr>
             ))}

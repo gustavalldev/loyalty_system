@@ -1,11 +1,30 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Logo from "../components/Logo.jsx";
 import Burger from "../components/Burger.jsx";
+import { apiGet } from "../api.js";
 
 export default function AppLayout() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    apiGet("/me")
+      .then((data) => {
+        if (!active) return;
+        setIsAdmin(data.role === "admin");
+      })
+      .catch(() => {
+        if (!active) return;
+        setIsAdmin(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   function logout() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -21,6 +40,7 @@ export default function AppLayout() {
             <NavLink to="/transactions">История</NavLink>
             <NavLink to="/referrals">Рефералы</NavLink>
             <NavLink to="/guide">Инструкция</NavLink>
+            {isAdmin && <NavLink to="/admin">Админка</NavLink>}
           </div>
           <div className="nav-right">
             <div className="profile-menu">
@@ -42,6 +62,7 @@ export default function AppLayout() {
         <NavLink to="/transactions" onClick={() => setMenuOpen(false)}>История</NavLink>
         <NavLink to="/referrals" onClick={() => setMenuOpen(false)}>Рефералы</NavLink>
         <NavLink to="/guide" onClick={() => setMenuOpen(false)}>Инструкция</NavLink>
+        {isAdmin && <NavLink to="/admin" onClick={() => setMenuOpen(false)}>Админка</NavLink>}
         <div className="drawer-footer">
           <Logo height={56} />
         </div>

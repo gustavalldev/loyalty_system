@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../../api.js";
+import {
+  TRANSACTION_STATUS_LABELS,
+  TRANSACTION_TYPE_LABELS,
+  getTransactionStatusLabel,
+  getTransactionTypeLabel
+} from "../../loyaltyLabels.js";
+
+function buildQuery({ type, status, from, to }) {
+  const params = new URLSearchParams();
+  if (type) params.set("type", type);
+  if (status) params.set("status", status);
+  if (from || to) params.set("period", `${from || ""}:${to || ""}`);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
 
 export default function TransactionsPage() {
   const [items, setItems] = useState([]);
@@ -9,20 +24,19 @@ export default function TransactionsPage() {
   const [to, setTo] = useState("");
 
   useEffect(() => {
-    load();
+    let active = true;
+    apiGet("/loyalty/transactions").then((data) => {
+      if (!active) return;
+      setItems(data.items || []);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
-  function buildQuery() {
-    const params = new URLSearchParams();
-    if (type) params.set("type", type);
-    if (status) params.set("status", status);
-    if (from || to) params.set("period", `${from || ""}:${to || ""}`);
-    const qs = params.toString();
-    return qs ? `?${qs}` : "";
-  }
-
   async function load() {
-    const data = await apiGet(`/loyalty/transactions${buildQuery()}`);
+    const query = buildQuery({ type, status, from, to });
+    const data = await apiGet(`/loyalty/transactions${query}`);
     setItems(data.items || []);
   }
 
@@ -33,17 +47,15 @@ export default function TransactionsPage() {
         <div className="grid two">
           <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
             <option value="">Тип</option>
-            <option value="accrual">Начисление</option>
-            <option value="redemption">Списание</option>
-            <option value="adjustment">Корректировка</option>
-            <option value="hold">Холд</option>
-            <option value="release">Релиз</option>
+            {Object.entries(TRANSACTION_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
           </select>
           <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Статус</option>
-            <option value="pending">Ожидает</option>
-            <option value="confirmed">Подтверждено</option>
-            <option value="cancelled">Отменено</option>
+            {Object.entries(TRANSACTION_STATUS_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
           </select>
           <input
             className="input"
@@ -77,8 +89,8 @@ export default function TransactionsPage() {
           <tbody>
             {items.map((item) => (
               <tr key={`${item.external_ref}-${item.created_at}`}>
-                <td>{item.type}</td>
-                <td>{item.status}</td>
+                <td>{getTransactionTypeLabel(item.type)}</td>
+                <td>{getTransactionStatusLabel(item.status)}</td>
                 <td>{item.amount}</td>
                 <td>{new Date(item.created_at).toLocaleDateString()}</td>
               </tr>

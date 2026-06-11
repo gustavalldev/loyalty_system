@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../../api.js";
 import { useNavigate } from "react-router-dom";
+import {
+  getTransactionStatusLabel,
+  getTransactionTypeLabel
+} from "../../loyaltyLabels.js";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -90,8 +94,8 @@ export default function DashboardPage() {
           <tbody>
             {recent.map((item) => (
               <tr key={`${item.external_ref}-${item.created_at}`}>
-                <td>{item.type}</td>
-                <td>{item.status}</td>
+                <td>{getTransactionTypeLabel(item.type)}</td>
+                <td>{getTransactionStatusLabel(item.status)}</td>
                 <td>{item.amount}</td>
                 <td>{new Date(item.created_at).toLocaleDateString()}</td>
               </tr>
