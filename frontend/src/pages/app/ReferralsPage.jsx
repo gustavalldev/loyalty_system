@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../../api.js";
 
+const STATUS_LABELS = {
+  registered: "Ожидает покупки",
+  paid: "Покупка подтверждена",
+  cancelled: "Отменено",
+  lead_created: "Лид создан",
+  deal_created: "Сделка создана"
+};
+
 export default function ReferralsPage() {
   const [code, setCode] = useState(null);
   const [items, setItems] = useState([]);
@@ -41,8 +49,8 @@ export default function ReferralsPage() {
             {items.map((item) => (
               <tr key={`${item.crm_deal_id || item.client_contact}-${item.created_at}`}>
                 <td>{item.client_contact || item.crm_deal_id || "—"}</td>
-                <td>{item.status}</td>
-                <td>{item.amount_paid || 0}</td>
+                <td>{item.paid_at ? STATUS_LABELS.paid : STATUS_LABELS[item.status] || item.status}</td>
+                <td>{item.paid_at ? item.amount_paid || 0 : "—"}</td>
               </tr>
             ))}
           </tbody>

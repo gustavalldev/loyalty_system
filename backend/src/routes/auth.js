@@ -218,18 +218,16 @@ async function registerUser({ target, full_name, password, phone, promo_code, co
       }
 
       const newUserAccountId = await getAccountIdByUserId(client, userId);
-      const referrerAccountId = await getAccountIdByUserId(client, referrerUserId);
-      if (!newUserAccountId || !referrerAccountId) {
+      if (!newUserAccountId) {
         throw new Error("loyalty_account_not_found");
       }
 
       const bonusNewUser = Math.max(0, Number(promoRow.bonus_new_user || 0));
-      const bonusReferrer = Math.max(0, Number(promoRow.bonus_referrer || 0));
 
       await client.query(
-        `INSERT INTO referral_attributions (referral_code_id, client_contact, status, amount_paid, paid_at)
-         VALUES ($1, $2, 'registered', $3, now())`,
-        [promoRow.id, normalizedTarget || normalizedPhone || String(userId), bonusReferrer]
+        `INSERT INTO referral_attributions (referral_code_id, client_contact, status)
+         VALUES ($1, $2, 'registered')`,
+        [promoRow.id, normalizedTarget || normalizedPhone || String(userId)]
       );
 
       if (bonusNewUser > 0) {
@@ -249,27 +247,6 @@ async function registerUser({ target, full_name, password, phone, promo_code, co
           await client.query(
             `UPDATE loyalty_accounts SET balance = balance + $1, updated_at = now() WHERE id = $2`,
             [bonusNewUser, newUserAccountId]
-          );
-        }
-      }
-
-      if (bonusReferrer > 0) {
-        const referrerTx = await client.query(
-          `INSERT INTO loyalty_transactions (account_id, type, amount, status, reason, external_ref, currency, confirmed_at, meta)
-           VALUES ($1, 'accrual', $2, 'confirmed', 'promo_referral', $3, 'BONUS', now(), $4)
-           ON CONFLICT DO NOTHING
-           RETURNING id`,
-          [
-            referrerAccountId,
-            bonusReferrer,
-            `register:promo:referrer:${userId}`,
-            { promo_code: normalizedPromoCode, role: "referrer", invited_user_id: userId }
-          ]
-        );
-        if (referrerTx.rows.length) {
-          await client.query(
-            `UPDATE loyalty_accounts SET balance = balance + $1, updated_at = now() WHERE id = $2`,
-            [bonusReferrer, referrerAccountId]
           );
         }
       }

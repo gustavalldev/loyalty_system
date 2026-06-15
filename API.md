@@ -18,6 +18,7 @@ Auth
   - Назначение: регистрация после подтверждения email-кода
   - Body: `{ target, full_name, phone, password, code, promo_code? }`
   - Response: `{ access_token, refresh_token, is_new_user }`
+  - Примечание: при регистрации по промокоду приветственный бонус начисляется только новому пользователю; бонус владельцу промокода начисляется после подтверждения покупки в админке
 - `POST /auth/login`
   - Назначение: прямой вход по email/телефону и паролю
   - Body: `{ target, password }`
@@ -89,6 +90,14 @@ Admin (RBAC)
   - Roles: `admin`
   - Body: `{ code?, status?, bonus_new_user?, bonus_referrer?, max_uses? }`
   - Response: `{ id, user_id, code, status, bonus_new_user, bonus_referrer, max_uses, uses_count, created_at }`
+- `GET /admin/referral-attributions`
+  - Roles: `admin`
+  - Query: `status` (`registered`, `paid`, `cancelled`, `lead_created`, `deal_created`)
+  - Response: `{ items: [ { id, client_contact, status, amount_paid, paid_at, created_at, code, bonus_referrer, referrer_user_id, referrer_full_name, referrer_email, referrer_phone } ] }`
+- `POST /admin/referral-attributions/:id/confirm-purchase`
+  - Roles: `admin`
+  - Назначение: подтверждает покупку реферала и начисляет бонус владельцу промокода
+  - Response: `{ ok, transaction_id, amount }`
 - `POST /admin/loyalty/adjustments`
   - Roles: `admin`
   - Body: `{ user_id, amount, reason }`
@@ -96,4 +105,4 @@ Admin (RBAC)
 
 Legacy CRM
 - CRM webhook больше не участвует в активной продуктовой логике начисления бонусов.
-- Начисление бонусов по промокоду происходит напрямую при регистрации пользователя через `POST /auth/register`.
+- Начисление бонуса новому пользователю происходит при регистрации по промокоду; бонус владельцу промокода начисляется только после подтверждения покупки через админку.

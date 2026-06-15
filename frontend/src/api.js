@@ -10,7 +10,8 @@ const ERROR_MESSAGES = {
   user_exists: "Пользователь уже существует",
   phone_in_use: "Телефон уже используется",
   delivery_failed: "Не удалось отправить письмо",
-  cooldown: "Слишком много запросов"
+  cooldown: "Слишком много запросов",
+  referral_already_confirmed: "Покупка уже подтверждена"
 };
 
 async function refreshToken() {

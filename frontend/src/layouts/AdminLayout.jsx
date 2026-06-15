@@ -16,6 +16,7 @@ export default function AdminLayout() {
           <div className="nav-links">
             <NavLink to="/admin">Пользователи</NavLink>
             <NavLink to="/admin/promo-codes">Промокоды</NavLink>
+            <NavLink to="/admin/referrals">Рефералы</NavLink>
             <NavLink to="/">Кабинет</NavLink>
           </div>
           <div className="nav-right">

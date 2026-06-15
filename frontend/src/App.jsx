@@ -16,6 +16,7 @@ import SecurityPage from "./pages/app/SecurityPage.jsx";
 import GuidePage from "./pages/app/GuidePage.jsx";
 import AdminUsersPage from "./pages/admin/AdminUsersPage.jsx";
 import AdminPromoCodesPage from "./pages/admin/AdminPromoCodesPage.jsx";
+import AdminReferralAttributionsPage from "./pages/admin/AdminReferralAttributionsPage.jsx";
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
       >
         <Route index element={<AdminUsersPage />} />
         <Route path="promo-codes" element={<AdminPromoCodesPage />} />
+        <Route path="referrals" element={<AdminReferralAttributionsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/auth/login" replace />} />
