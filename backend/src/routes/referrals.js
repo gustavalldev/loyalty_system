@@ -42,7 +42,9 @@ router.get("/attributions", requireAuth, async (req, res) => {
 
   const whereClause = `WHERE ${conditions.join(" AND ")}`;
   const { rows } = await pool.query(
-    `SELECT ra.crm_deal_id, ra.client_contact, ra.status, ra.amount_paid, ra.paid_at, ra.created_at
+    `SELECT ra.crm_deal_id, ra.client_contact,
+            CASE WHEN ra.paid_at IS NOT NULL THEN 'paid' ELSE ra.status::text END AS status,
+            ra.amount_paid, ra.paid_at, ra.created_at
      FROM referral_attributions ra
      JOIN referral_codes rc ON rc.id = ra.referral_code_id
      ${whereClause}

@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../../api.js";
-
-const STATUS_LABELS = {
-  registered: "Ожидает покупки",
-  paid: "Покупка подтверждена",
-  cancelled: "Отменено",
-  lead_created: "Лид создан",
-  deal_created: "Сделка создана"
-};
+import { getReferralStatusLabel } from "../../loyaltyLabels.js";
 
 export default function ReferralsPage() {
   const [code, setCode] = useState(null);
@@ -49,7 +42,7 @@ export default function ReferralsPage() {
             {items.map((item) => (
               <tr key={`${item.crm_deal_id || item.client_contact}-${item.created_at}`}>
                 <td>{item.client_contact || item.crm_deal_id || "—"}</td>
-                <td>{item.paid_at ? STATUS_LABELS.paid : STATUS_LABELS[item.status] || item.status}</td>
+                <td>{getReferralStatusLabel(item.paid_at ? "paid" : item.status)}</td>
                 <td>{item.paid_at ? item.amount_paid || 0 : "—"}</td>
               </tr>
             ))}

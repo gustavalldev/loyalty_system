@@ -19,6 +19,14 @@ export const TRANSACTION_STATUS_LABELS = {
   cancelled: "Отменено"
 };
 
+export const REFERRAL_STATUS_LABELS = {
+  registered: "Ожидает покупки",
+  paid: "Покупка подтверждена",
+  cancelled: "Отменено",
+  lead_created: "Лид создан",
+  deal_created: "Сделка создана"
+};
+
 export function getRoleLabel(role) {
   return ROLE_LABELS[role] || role || "—";
 }
@@ -29,4 +37,8 @@ export function getTransactionTypeLabel(type) {
 
 export function getTransactionStatusLabel(status) {
   return TRANSACTION_STATUS_LABELS[status] || status || "—";
+}
+
+export function getReferralStatusLabel(status) {
+  return REFERRAL_STATUS_LABELS[status] || status || "—";
 }

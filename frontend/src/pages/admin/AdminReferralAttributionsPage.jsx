@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../api.js";
-
-const STATUS_LABELS = {
-  registered: "Ожидает покупки",
-  paid: "Покупка подтверждена",
-  cancelled: "Отменено",
-  lead_created: "Лид создан",
-  deal_created: "Сделка создана"
-};
+import { getReferralStatusLabel } from "../../loyaltyLabels.js";
 
 function buildQuery(status) {
   if (!status) return "";
@@ -102,7 +95,7 @@ export default function AdminReferralAttributionsPage() {
                   <td>{item.client_contact || "—"}</td>
                   <td>{item.code || "—"}</td>
                   <td>{item.referrer_full_name || item.referrer_email || item.referrer_phone || "—"}</td>
-                  <td>{STATUS_LABELS[item.status] || item.status || "—"}</td>
+                  <td>{getReferralStatusLabel(item.status)}</td>
                   <td>{item.status === "paid" ? item.amount_paid : item.bonus_referrer}</td>
                   <td>{formatDate(item.created_at)}</td>
                   <td>
